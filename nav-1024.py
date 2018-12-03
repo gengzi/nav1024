@@ -70,11 +70,12 @@ def loadPageVer2(url):
     :return:
     '''
     response = requests.get(url,headers = headers)
-    htmlResponse = response.text
+    htmlResponse = utils.setCharester(response)
     isnav = 0
     ispaqu = 0
     #解析
     etreeText = etree.HTML(htmlResponse)
+
     links = etreeText.xpath('//a')
     for link in links:
         linkhref = link.xpath('@href')
@@ -85,6 +86,7 @@ def loadPageVer2(url):
             linktext = linktext[0]
         # linktext = str(linktext).decode('unicode_escape').encode("UTF-8")
         #清洗链接
+        print("不符合："+linkhref)
         if "http" in linkhref :
             # 查询该链接是否存在与数据库中
             count = dao.selectlinkIsExit(utils.trim(linkhref))
@@ -96,12 +98,14 @@ def loadPageVer2(url):
                 else:
                     isnav = 0
                 #存入到数据库
-                print("存放到数据库-link:"+linkhref+";文本："+linktext)
+                print("存放到数据库-link:"+linkhref)
                 dao.saveLinkInfo(linktext,linkhref,isnav,ispaqu)
             else:
                 continue
         else:
             continue
+
+
 
 
 def isInvalid(NoIsError_links):
@@ -122,9 +126,16 @@ def isInvalid(NoIsError_links):
             response = session.get(str(onelink[1]),headers=headers,timeout = TIMEOUTS)
 
             if response.status_code == 200 :
+                #拿到当前网站的title
+                htmlinfo = utils.setCharester(response)
+                etreeText = etree.HTML(htmlinfo)
+                title = etreeText.xpath('//title/text()')
+                if len(title) > 0:
+                    strtitle = str(title[0])
+
                 #修改表数据,标识链接可以访问
-                print("修改id：" + str(onelink[0])+"的iserror为：1")
-                dao.updateIsInvalid(id,1)
+                print("修改id：" + str(onelink[0])+"的iserror为：1,标题："+strtitle)
+                dao.updateIsInvalidAndTitle(id,1,strtitle)
             else:
                 print("设置id：" + str(onelink[0]) + "的iserror为：2")
                 dao.updateIsInvalid(id, 2)
@@ -160,7 +171,12 @@ def loadNavLink():
             # print("link:"+uri)
             # print("id:" + id)
             print("load链接:"+uri)
-            loadPageVer2(str(IsNav_link[1]))
+            try:
+                loadPageVer2(str(IsNav_link[1]))
+            except Exception,e:
+                print("link:" + str(IsNav_link[1]) + "出错")
+                print(e)
+                continue
             #将该链接爬取状态修改为 爬取
             dao.updateIspaqu(id=id,ispaqu=1)
         #继续执行
@@ -180,7 +196,11 @@ def loadNavLink():
      解析“导航”的关键字，爬取导航里面的内容
      并加上当前链接是否失效，判断ping 是否会超时
      QAQ： 发现一个特点，有些网站在白天是访问不进去的，然后到了网上12点，就可以访问了。
-
+    ########
+     version1.2  更新，修复bug
+     标题出现乱码，在读取链接页面时，能访问成功的话，获取tilte重新设置
+     发现查找到的链接有些不是 1024 网站。
+     --- 出现一个问题： 编码问题，解析出来的文本报错
 """
 
 if __name__ == "__main__":

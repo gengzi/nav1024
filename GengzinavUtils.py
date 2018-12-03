@@ -5,6 +5,7 @@
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
+import  requests
 
 class GengzinavUtils():
     """
@@ -24,3 +25,18 @@ class GengzinavUtils():
             if s[-1] == ' ':
                 s = s[:-1]
         return s
+
+    def setCharester(self,req):
+        '''
+        修改文件的编码
+        :param req:
+        :return:
+        '''
+        if req.encoding == "ISO-8859-1":
+            encodings = requests.utils.get_encodings_from_content(req.text)
+            if encodings:
+                encoding = encodings[0]
+            else:
+                encoding = req.apparent_encoding
+            return req.content.decode(encoding, 'replace').encode('utf-8', 'replace')
+        return req.text
