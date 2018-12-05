@@ -10,7 +10,7 @@ from MysqlHelper import *
 from GengzinavUtils import *
 
 # 初始化mysql
-mysql = MysqlHelper(host="123.206.30.117",user="root",passwd="111",db="1024",port=3306)
+mysql = MysqlHelper(host="127.0.0.1",user="root",passwd="111",db="1024",port=3306)
 
 utils = GengzinavUtils()
 
